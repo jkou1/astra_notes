@@ -1,106 +1,67 @@
 # AstraNotes Backlog
 
 ## Project Summary
-AstraNotes is a personal note-taking application built in Python. The backend framework is not locked yet; the current choice is between Flask and Django. This backlog is written to give future AI tools enough context to continue planning, implementation, and prioritization without re-discovering the project shape.
+AstraNotes is an ultra-low latency, real-time collaborative note-taking web application. It is built using Next.js (App Router), Prisma ORM, Supabase (PostgreSQL), and Yjs for client-side CRDT synchronization. This backlog provides future AI tools with complete context to continue planning, implementation, and prioritization without re-discovering the technical stack.
 
 ## Product Goal
-Build a reliable, fast, and simple note-taking app that supports creating, organizing, searching, and revisiting notes across devices.
+Build a highly concurrent, real-time collaborative note-taking platform that allows multiple users to edit the same documents simultaneously with zero lag, deploying seamlessly to Vercel's serverless infrastructure.
 
 ## Core Assumptions
-- Notes are primarily text-first, with room for rich text or Markdown later.
-- Authentication will likely be required.
-- Data will be stored in a relational database.
-- The app should stay small enough to be maintained by one developer, with AI assistance.
-- Flask or Django will be selected during sprint zero based on speed of implementation, structure, and long-term maintenance needs.
+- The application is strictly web-based and deployed on Vercel.
+- Real-time collaboration is powered by Yjs/CRDTs to process edits client-side and minimize server computational overhead.
+- AI coding assistants (GitHub Copilot/Cursor) will be used extensively, requiring highly type-safe architectures to prevent code generation bugs.
+- No native AI features (like auto-complete or vector search) are required in the application itself.
 
-## Tentative Domain Model
-- User
-- Note
-- Notebook or Collection
-- Tag
-- Attachment
-- Reminder or Pin
-- Share or Permission, if collaboration is added later
+## Domain Model
+- **User**: Authentication, profile settings, and system identification.
+- **Note / Document**: Text data, metadata, and the critical binary CRDT state blob (`Uint8Array`).
+- **Workspace / Room**: Collaboration context handling active user presence and editing sessions.
+- **Folder / Collection**: Logical organization wrappers for notes.
+- **Permission / Access**: Read/Write rules governing which users can join a specific Note Room.
 
 ## Prioritized Backlog
 
-### P0: Foundation
-- Choose backend framework: Flask or Django.
-- Initialize repository structure and project conventions.
-- Set up Python environment management.
-- Configure linting, formatting, and testing.
-- Set up database connection and migration workflow.
-- Create base application skeleton and landing route.
+### P0: Foundation & Sync Engine
+- Initialize repository structure according to `structural_overview.md`.
+- Configure strict TypeScript settings and `.github/copilot-instructions.md`.
+- Set up Prisma ORM with Supabase PostgreSQL connection.
+- Design database schema to store binary CRDT state blobs efficiently.
+- Initialize TipTap or Lexical text editor base on the client side.
+- Set up the real-time sync provider (e.g., Liveblocks or Supabase Realtime) to bind with Yjs.
 
-### P1: Core Note CRUD
-- Create notes.
-- Edit notes.
-- Delete notes.
-- View note detail.
-- List notes by recency.
-- Autosave or explicit save flow.
+### P1: Collaborative Note CRUD
+- Create new collaborative notes with instant workspace provisioning.
+- Implement real-time typing synchronization via Yjs text binding.
+- Render live user presence cursors and names using the Yjs awareness state.
+- Automatically persist the Yjs binary state blob back to the database on debounced document changes.
+- Implement basic folder structures to organize notes.
+- Soft-delete or permanently purge notes from the dashboard.
 
-### P1: Organization
-- Create notebooks or collections.
-- Tag notes.
-- Filter notes by notebook.
-- Filter notes by tag.
-- Pin or favorite notes.
+### P1: Authentication & Workspace Security
+- Implement Supabase Auth (Email/Password or OAuth).
+- Build workspace-isolated route guards (`/notes/[id]`) using Next.js Middleware.
+- Enforce Prisma Row-Level Security (RLS) to prevent unauthorized access to note binary states.
+- Support basic note-sharing invitations by user email.
 
-### P1: Search and Discovery
-- Full-text search across notes.
-- Search by title and body.
-- Sort and filter search results.
-- Recent notes and quick access views.
+### P2: Real-time Editor Experience
+- Add rich-text/Markdown formatting toolbar inside the collaborative editor.
+- Implement collaborative selection highlights (seeing what text other users have highlighted).
+- Build standard editor keyboard shortcuts.
+- Create elegant offline-fallback indicators for when WebSocket connections drop.
 
-### P1: Authentication and User Data
-- Sign up and sign in.
-- Sign out.
-- Password reset or account recovery.
-- User-specific note isolation.
-- Basic profile settings.
-
-### P2: Editor Experience
-- Markdown support.
-- Live preview.
-- Keyboard shortcuts.
-- Character count or metadata display.
-- Draft recovery.
-
-### P2: Attachments and Media
-- Upload files to notes.
-- Preview supported media.
-- Remove attachments.
-- File size and type validation.
-
-### P2: Sync and Backup
-- Periodic backups.
-- Export notes to JSON or Markdown.
-- Import notes from a prior export.
-- Basic audit or recovery flow.
-
-### P3: Sharing and Collaboration
-- Share notes with other users.
-- Read-only and editable permissions.
-- Invite flow.
-- Activity history.
-
-### P3: Product Polish
-- Responsive layout.
-- Accessibility pass.
-- Empty states.
-- Error handling and friendly fallback screens.
-- Basic telemetry or logging.
+### P3: Platform Polish & Optimization
+- Add active connection counters and user avatar lists to the document header.
+- Create optimized empty states for new folders and dashboards.
+- Optimize the database persistence layer to prevent race conditions during high-concurrency saves.
+- Responsive mobile-web design review for the dashboard and sidebar navigation.
 
 ## Open Questions
-- Should AstraNotes be API-first, server-rendered, or a hybrid?
-- Should the editor be plain text, Markdown, or rich text initially?
-- Which backend framework best fits the project now: Flask or Django?
-- Will collaboration be in scope for the first release?
-- Should offline-first behavior be planned early or deferred?
+- What is the most cost-effective WebSocket synchronization provider to pair with Yjs on Vercel serverless (e.g., Liveblocks vs. Supabase Realtime vs. Y-Sweet)?
+- Should document text be mirrored as a plain string columns in PostgreSQL alongside the binary blob to allow fast full-text searching?
+- How long should the client debounce changes before pushing the compiled binary Yjs state updates to the database?
 
 ## Working Notes For Future AI Tools
-- Start from the chosen framework decision before expanding the app structure.
-- Prefer simple, testable implementations over feature breadth.
-- Keep the data model minimal until note CRUD, search, and organization are stable.
-- If a decision is missing, treat it as an explicit open question rather than assuming a default.
+- Always read `.github/copilot-instructions.md` before generating code blocks.
+- Prioritize type safety; never generate code containing implicit `any` types.
+- Ensure the database layer handles `Uint8Array` data carefully when saving Yjs updates via Prisma.
+- Do not add standard input fields for document bodies; the collaborative canvas must rely purely on the integrated CRDT text editor instance.
