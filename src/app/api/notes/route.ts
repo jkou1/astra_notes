@@ -1,13 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-
-type CreateNoteBody = {
-  title: string;
-  content: string;
-  category?: string | null;
-  tags?: string[];
-  encryption_enabled?: boolean;
-};
+import { validateCreateNoteBody } from './validation';
 
 function makeError(status: number, detail: string, requestId: string) {
   return NextResponse.json(
@@ -19,32 +12,12 @@ function makeError(status: number, detail: string, requestId: string) {
 export async function POST(req: Request) {
   const requestId = crypto.randomUUID();
   try {
-    const body = (await req.json()) as Partial<CreateNoteBody> | undefined;
-    if (!body) return makeError(400, 'Missing request body', requestId);
-
-    const { title, content, category, tags, encryption_enabled } = body;
-
-    if (typeof title !== 'string' || title.trim().length === 0) {
-      return makeError(400, 'Title is required', requestId);
-    }
-    if (title.length < 1 || title.length > 500) {
-      return makeError(400, 'Title must be 1-500 characters', requestId);
+    const result = validateCreateNoteBody(await req.json().catch(() => null));
+    if (!result.ok) {
+      return makeError(result.status, result.detail, requestId);
     }
 
-    if (typeof content !== 'string' || content.trim().length === 0) {
-      return makeError(400, 'Content must not be empty', requestId);
-    }
-
-    // Global non-ASCII rejection per project policy
-    const nonAscii = /[^\x00-\x7F]/.test(title + '\n' + content);
-    if (nonAscii) {
-      return makeError(400, 'Non-ASCII characters are not allowed', requestId);
-    }
-
-    // basic tags validation
-    if (tags && !Array.isArray(tags)) {
-      return makeError(400, 'Tags must be an array of strings', requestId);
-    }
+    const { title, content, category, tags, encryption_enabled } = result.data;
 
     // Persist note metadata and (if present) CRDT blob placeholder
     // NOTE: `Note` and `NoteBlob` Prisma models must exist in schema.prisma
