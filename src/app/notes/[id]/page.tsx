@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 
+import { NoteEditor } from '@/components/note-editor';
 import { prisma } from '@/lib/prisma';
 
 type NotePageProps = {
@@ -24,6 +25,7 @@ export default async function NotePage({ params }: NotePageProps) {
       updatedAt: true,
       blob: {
         select: {
+          crdtBlob: true,
           contentPlain: true,
           wordCount: true,
           lineCount: true,
@@ -81,23 +83,12 @@ export default async function NotePage({ params }: NotePageProps) {
           </div>
 
           <div className="workspace__grid">
-            <article className="editor-card">
-              <div className="editor-card__toolbar">
-                <button className="toolbar-button" type="button">
-                  Comment
-                </button>
-                <button className="toolbar-button" type="button">
-                  Share link
-                </button>
-                <button className="toolbar-button" type="button">
-                  Copy state
-                </button>
-              </div>
-              <div className="editor-card__canvas">
-                <h3>{note.title}</h3>
-                <p>{note.blob?.contentPlain ?? 'This note does not have content yet.'}</p>
-              </div>
-            </article>
+            <NoteEditor
+              noteId={note.id}
+              title={note.title}
+              initialContent={note.blob?.contentPlain ?? ''}
+              initialCrdtBase64={note.blob?.crdtBlob ? Buffer.from(note.blob.crdtBlob).toString('base64') : null}
+            />
 
             <aside className="summary-card">
               <div>
