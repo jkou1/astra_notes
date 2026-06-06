@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as Y from 'yjs';
 
@@ -51,6 +52,7 @@ function countLines(content: string) {
 }
 
 export function NoteEditor({ noteId, title, initialContent, initialCrdtBase64 }: NoteEditorProps) {
+  const router = useRouter();
   const ydoc = useMemo(() => new Y.Doc(), []);
   const ytext = useMemo(() => ydoc.getText('content'), [ydoc]);
   const [content, setContent] = useState(initialContent);
@@ -117,6 +119,8 @@ export function NoteEditor({ noteId, title, initialContent, initialCrdtBase64 }:
 
       setSavedAt(payload.item?.lastSyncedAt ?? new Date().toISOString());
       setSaveState('saved');
+      router.push('/');
+      router.refresh();
     } catch {
       setSaveState('error');
       setError('Network error while saving note.');
