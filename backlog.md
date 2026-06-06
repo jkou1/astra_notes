@@ -65,3 +65,51 @@ Build a highly concurrent, real-time collaborative note-taking platform that all
 - Prioritize type safety; never generate code containing implicit `any` types.
 - Ensure the database layer handles `Uint8Array` data carefully when saving Yjs updates via Prisma.
 - Do not add standard input fields for document bodies; the collaborative canvas must rely purely on the integrated CRDT text editor instance.
+
+
+## Implementation Backlog (from `project-requirements.md`)
+
+These items are scoped and prioritized for early sprints. Each task is suitable to convert to a GitHub Issue.
+
+Epic: Notes Core & API
+- Add Prisma models: `User`, `Note`, `NoteBlob`, `Share`, `ActivityLog` and generate migrations.
+- Implement `POST /api/notes` — create note with validation (title length, non-ASCII rejection, non-empty), return `id` and timestamps.
+- Implement `GET /api/notes/:id` — return decrypted payload when authorized, 404 for soft-deleted notes.
+- Implement `PATCH /api/notes/:id` — partial updates, re-encrypt if `encryption_enabled` toggled, update `updatedAt`.
+- Implement `DELETE /api/notes/:id` — soft-delete (status→DELETED) and retention logic.
+
+Epic: CRDT Persistence & Real-time
+- Store `crdtBlob` in `NoteBlob` (bytea) and implement server-side save/load endpoints.
+- Add WebSocket relay (Yjs provider) or integrate Supabase Realtime / Liveblocks for Yjs update propagation.
+- Implement Yjs awareness presence handling and efficient persistence (debounced saves).
+
+Epic: Editor Integration
+- Add client editor component (`'use client'`) using TipTap or Lexical bound to Yjs.
+- Ensure lazy-loading of editor and Yjs to reduce bundle size.
+
+Epic: Search & Indexing
+- Extract `content_plain` for non-encrypted notes and populate Postgres full-text index.
+- Implement paginated listing with filters (`skip`/`limit`, category, status) and response envelope.
+
+Epic: Encryption, KMS & Admin Workflows
+- Integrate KMS for audit keys and implement server-side decryption flows.
+- Implement Zero-Trust multi-party authorization for admin decrypted-search with ephemeral keys and strict audits.
+
+Epic: Plugin System
+- Implement plugin registry, sandbox execution, and permission model (read-only by default; grant write-capable plugins with review).
+- Implement audit logging for plugin actions and enforcement of commutativity/associativity/idempotency for write-capable plugins.
+
+Epic: Testing & CI
+- Add unit tests for validation and Prisma operations.
+- Add integration tests for API endpoints (including authorization and encryption cases).
+- Add GitHub Actions: typecheck, lint, test, and build.
+
+Sprint-0 (suggested 2-week):
+1. Prisma models + migrations, DB connection.
+2. `POST`/`GET`/`PATCH`/`DELETE` basic flows for notes, including validation.
+3. Editor stub with Yjs persistence (debounced save to NoteBlob).
+4. CI skeleton (typecheck + lint).
+
+---
+
+File: backlog.md

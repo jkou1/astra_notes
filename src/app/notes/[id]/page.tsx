@@ -1,11 +1,41 @@
+import { notFound } from 'next/navigation';
+
+import { prisma } from '@/lib/prisma';
+
 type NotePageProps = {
   params: {
     id: string;
   };
 };
 
+export const dynamic = 'force-dynamic';
+
 export default async function NotePage({ params }: NotePageProps) {
   const { id } = params;
+  const note = await prisma.note.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      title: true,
+      category: true,
+      tags: true,
+      encryptionEnabled: true,
+      createdAt: true,
+      updatedAt: true,
+      blob: {
+        select: {
+          contentPlain: true,
+          wordCount: true,
+          lineCount: true,
+          characterCount: true,
+        },
+      },
+    },
+  });
+
+  if (!note) {
+    notFound();
+  }
 
   return (
     <main className="shell">
@@ -28,24 +58,24 @@ export default async function NotePage({ params }: NotePageProps) {
           <div className="workspace__hero">
             <div className="workspace__title">
               <span className="pill">Realtime room</span>
-              <h2>Collaborative editor placeholder for note {id}.</h2>
+              <h2>{note.title}</h2>
               <p>
-                This route is ready for the eventual Yjs-bound editor, cursors, and persistence flow.
-                For now it keeps the room chrome and status visible so the next feature can slot in cleanly.
+                {note.category ? `Category: ${note.category}.` : 'This note is uncategorized.'} It was
+                saved in Supabase and can be used as the first collaborative room shell.
               </p>
             </div>
             <div className="workspace__stats">
               <div className="stat-card">
-                <strong>Live</strong>
-                <span>Connection state</span>
+                <strong>{note.tags.length}</strong>
+                <span>Tags</span>
               </div>
               <div className="stat-card">
-                <strong>4</strong>
-                <span>Room events</span>
+                <strong>{note.encryptionEnabled ? 'On' : 'Off'}</strong>
+                <span>Encryption flag</span>
               </div>
               <div className="stat-card">
-                <strong>0.0s</strong>
-                <span>Latency target</span>
+                <strong>{note.blob?.characterCount ?? 0}</strong>
+                <span>Characters</span>
               </div>
             </div>
           </div>
@@ -64,11 +94,8 @@ export default async function NotePage({ params }: NotePageProps) {
                 </button>
               </div>
               <div className="editor-card__canvas">
-                <h3>Note content will live here</h3>
-                <p>
-                  The editor pane is intentionally empty apart from a clear placeholder, so it can be
-                  replaced with a collaborative editor component without reworking the shell layout.
-                </p>
+                <h3>{note.title}</h3>
+                <p>{note.blob?.contentPlain ?? 'This note does not have content yet.'}</p>
               </div>
             </article>
 
@@ -80,12 +107,27 @@ export default async function NotePage({ params }: NotePageProps) {
                   <strong>Private</strong>
                 </div>
                 <div className="summary-card__item">
-                  <span className="muted">Mode</span>
-                  <strong>Draft</strong>
+                  <span className="muted">Created</span>
+                  <strong>{note.createdAt.toLocaleDateString()}</strong>
                 </div>
                 <div className="summary-card__item">
-                  <span className="muted">Presence</span>
-                  <strong>Enabled</strong>
+                  <span className="muted">Updated</span>
+                  <strong>{note.updatedAt.toLocaleDateString()}</strong>
+                </div>
+              </div>
+              <div>
+                <p className="muted">Document stats</p>
+                <div className="summary-card__item">
+                  <span className="muted">Words</span>
+                  <strong>{note.blob?.wordCount ?? 0}</strong>
+                </div>
+                <div className="summary-card__item">
+                  <span className="muted">Lines</span>
+                  <strong>{note.blob?.lineCount ?? 0}</strong>
+                </div>
+                <div className="summary-card__item">
+                  <span className="muted">Tags</span>
+                  <strong>{note.tags.length}</strong>
                 </div>
               </div>
             </aside>
