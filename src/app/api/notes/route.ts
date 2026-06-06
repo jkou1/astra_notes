@@ -19,27 +19,27 @@ export async function POST(req: Request) {
 
     const { title, content, category, tags, encryption_enabled } = result.data;
 
-    // Persist note metadata and (if present) CRDT blob placeholder
-    // NOTE: `Note` and `NoteBlob` Prisma models must exist in schema.prisma
-    const note = await prisma.note.create({
-      data: {
-        title: title.trim(),
-        category: category ?? null,
-        tags: tags ?? [],
-        encryptionEnabled: !!encryption_enabled,
-      },
-    });
+    const note = await prisma.$transaction(async (transaction) => {
+      const createdNote = await transaction.note.create({
+        data: {
+          title: title.trim(),
+          category: category ?? null,
+          tags: tags ?? [],
+          encryptionEnabled: !!encryption_enabled,
+        },
+      });
 
-    // If we store a plain representation, create a NoteBlob record (optional)
-    await prisma.noteBlob.create({
-      data: {
-        noteId: note.id,
-        // for now store a plain-text snapshot; real CRDT persistence happens via separate endpoints/providers
-        contentPlain: content,
-        wordCount: content.split(/\s+/).filter(Boolean).length,
-        lineCount: content.split(/\n/).length,
-        characterCount: content.length,
-      },
+      await transaction.noteBlob.create({
+        data: {
+          noteId: createdNote.id,
+          contentPlain: content,
+          wordCount: content.split(/\s+/).filter(Boolean).length,
+          lineCount: content.split(/\n/).length,
+          characterCount: content.length,
+        },
+      });
+
+      return createdNote;
     });
 
     return NextResponse.json({ item: note, request_id: requestId }, { status: 201 });

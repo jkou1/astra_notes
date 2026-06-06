@@ -1,29 +1,32 @@
+import { prisma } from '@/lib/prisma';
+import { NoteCreateForm } from '@/components/note-create-form';
+
+export const dynamic = 'force-dynamic';
+
 const navigationItems = [
-  { label: "Dashboard", count: "12" },
-  { label: "Shared", count: "4" },
-  { label: "Archive", count: "8" },
-  { label: "Templates", count: "3" },
+  { label: 'Dashboard', count: '12' },
+  { label: 'Shared', count: '4' },
+  { label: 'Archive', count: '8' },
+  { label: 'Templates', count: '3' },
 ];
 
-const recentNotes = [
-  {
-    title: "Sprint zero shell",
-    description: "Landing layout, workspace scaffold, and navigation states.",
-    time: "Edited 2m ago",
-  },
-  {
-    title: "Design tokens",
-    description: "Colors, motion, and density rules for the editor shell.",
-    time: "Edited 18m ago",
-  },
-  {
-    title: "Collaboration plan",
-    description: "Presence, cursors, and Yjs sync flow for the first editor pass.",
-    time: "Edited 1h ago",
-  },
-];
+export default async function HomePage() {
+  const recentNotes = await prisma.note.findMany({
+    orderBy: { updatedAt: 'desc' },
+    take: 3,
+    select: {
+      id: true,
+      title: true,
+      category: true,
+      updatedAt: true,
+      blob: {
+        select: {
+          contentPlain: true,
+        },
+      },
+    },
+  });
 
-export default function HomePage() {
   return (
     <main className="shell">
       <div className="shell__frame">
@@ -87,7 +90,7 @@ export default function HomePage() {
 
               <div className="workspace__stats" aria-label="Workspace summary">
                 <div className="stat-card">
-                  <strong>12</strong>
+                  <strong>{recentNotes.length}</strong>
                   <span>Notes in view</span>
                 </div>
                 <div className="stat-card">
@@ -103,35 +106,18 @@ export default function HomePage() {
 
             <div className="workspace__grid">
               <article className="editor-card">
-                <div className="editor-card__toolbar" aria-label="Editor toolbar preview">
-                  <button className="toolbar-button" type="button">
-                    Bold
-                  </button>
-                  <button className="toolbar-button" type="button">
-                    Italic
-                  </button>
-                  <button className="toolbar-button" type="button">
-                    Heading
-                  </button>
-                  <button className="toolbar-button" type="button">
-                    Checklist
-                  </button>
-                  <button className="toolbar-button" type="button">
-                    Share
-                  </button>
+                <div className="editor-card__toolbar" aria-label="Create note actions">
+                  <span className="pill pill--accent">Create a new note</span>
+                  <span className="pill">Saved through Supabase</span>
                 </div>
 
                 <div className="editor-card__canvas">
-                  <h3>Q2 roadmap</h3>
+                  <h3>Quick note entry</h3>
                   <p>
-                    This placeholder editor surface is ready for the future TipTap or Lexical integration.
-                    It gives the app a realistic shell for top-level navigation, note editing, and room
-                    status without pretending the collaborative engine already exists.
+                    This form writes a new note record and its note blob through Prisma, then sends you to
+                    the saved note room.
                   </p>
-                  <p>
-                    Add the CRDT document, awareness state, and persistence wiring here when the next slice
-                    of implementation starts.
-                  </p>
+                  <NoteCreateForm />
                 </div>
               </article>
 
@@ -139,13 +125,21 @@ export default function HomePage() {
                 <div>
                   <p className="muted">Recent notes</p>
                   <ul className="note-list">
-                    {recentNotes.map((note) => (
-                      <li key={note.title} className="note-card">
-                        <strong>{note.title}</strong>
-                        <span className="muted">{note.description}</span>
-                        <span className="badge">{note.time}</span>
+                    {recentNotes.length === 0 ? (
+                      <li className="note-card">
+                        <strong>No notes yet</strong>
+                        <span className="muted">Create the first note to seed the Supabase workspace.</span>
                       </li>
-                    ))}
+                    ) : (
+                      recentNotes.map((note) => (
+                        <li key={note.id} className="note-card">
+                          <strong>{note.title}</strong>
+                          <span className="muted">{note.category ?? 'Uncategorized'}</span>
+                          <span className="muted">{note.blob?.contentPlain ?? 'No content preview yet'}</span>
+                          <span className="badge">{note.updatedAt.toLocaleDateString()}</span>
+                        </li>
+                      ))
+                    )}
                   </ul>
                 </div>
 

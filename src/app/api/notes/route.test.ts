@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST } from './route';
 
 const prismaMock = vi.hoisted(() => ({
+  $transaction: vi.fn(),
   note: {
     create: vi.fn(),
   },
@@ -16,6 +17,7 @@ vi.mock('@/lib/prisma', () => ({
 
 describe('POST /api/notes', () => {
   beforeEach(() => {
+    prismaMock.$transaction.mockReset();
     prismaMock.note.create.mockReset();
     prismaMock.noteBlob.create.mockReset();
     vi.stubGlobal('crypto', {
@@ -24,6 +26,10 @@ describe('POST /api/notes', () => {
   });
 
   it('creates a note and note blob for valid input', async () => {
+    prismaMock.$transaction.mockImplementation(async (callback) => {
+      return callback(prismaMock as never);
+    });
+
     prismaMock.note.create.mockResolvedValue({
       id: 'note-1',
       title: 'Draft one',
@@ -71,6 +77,7 @@ describe('POST /api/notes', () => {
         encryptionEnabled: true,
       },
     });
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
     expect(prismaMock.noteBlob.create).toHaveBeenCalledWith({
       data: {
         noteId: 'note-1',
