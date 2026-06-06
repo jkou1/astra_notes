@@ -72,10 +72,10 @@ export async function PATCH(req: Request, { params }: NoteRouteProps) {
 
     const note = await prisma.note.findUnique({
       where: { id: params.id },
-      select: { id: true },
+      select: { id: true, status: true },
     });
 
-    if (!note) {
+    if (!note || note.status === 'DELETED') {
       return makeError(404, 'Note not found', requestId);
     }
 
@@ -123,6 +123,55 @@ export async function PATCH(req: Request, { params }: NoteRouteProps) {
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('PATCH /api/notes/[id] error', err, { requestId, noteId: params.id });
+    return makeError(500, 'Internal server error', requestId);
+  }
+}
+
+export async function DELETE(_req: Request, { params }: NoteRouteProps) {
+  const requestId = crypto.randomUUID();
+
+  try {
+    const note = await prisma.note.findUnique({
+      where: { id: params.id },
+      select: { id: true, status: true },
+    });
+
+    if (!note || note.status === 'DELETED') {
+      return makeError(404, 'Note not found', requestId);
+    }
+
+    const deletedAt = new Date();
+    const deletedNote = await prisma.$transaction(async (transaction) => {
+      const updatedNote = await transaction.note.update({
+        where: { id: params.id },
+        data: {
+          status: 'DELETED',
+          updatedAt: deletedAt,
+        },
+        select: {
+          id: true,
+          status: true,
+          updatedAt: true,
+        },
+      });
+
+      await transaction.activityLog.create({
+        data: {
+          noteId: params.id,
+          action: 'DELETED',
+          metadata: {
+            deletedAt: deletedAt.toISOString(),
+          },
+        },
+      });
+
+      return updatedNote;
+    });
+
+    return NextResponse.json({ item: deletedNote, request_id: requestId });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('DELETE /api/notes/[id] error', err, { requestId, noteId: params.id });
     return makeError(500, 'Internal server error', requestId);
   }
 }

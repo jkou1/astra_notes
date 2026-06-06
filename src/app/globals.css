@@ -440,6 +440,12 @@ button {
   background: linear-gradient(135deg, rgba(56, 189, 248, 0.24), rgba(15, 23, 42, 0.82));
 }
 
+.toolbar-button--danger {
+  color: #fecaca;
+  border-color: rgba(248, 113, 113, 0.36);
+  background: rgba(127, 29, 29, 0.2);
+}
+
 .toolbar-button:disabled {
   opacity: 0.7;
   cursor: progress;
@@ -504,6 +510,23 @@ button {
   gap: 8px;
 }
 
+.note-card--with-actions {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.note-card__body {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.note-delete {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
 .note-list--scrollable {
   max-height: 420px;
   overflow-y: auto;
@@ -529,11 +552,19 @@ button {
   transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
 }
 
+.note-card--button {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 .note-card--link:hover,
 .note-card--link:focus-visible {
-  border-color: rgba(103, 232, 249, 0.42);
-  background: rgba(14, 35, 52, 0.72);
-  transform: translateY(-1px);
+  color: var(--accent);
 }
 
 .note-card--link:focus-visible {
@@ -565,6 +596,100 @@ button {
   gap: 12px;
 }
 
+.note-room-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  position: relative;
+  overflow: auto;
+}
+
+.note-room-page--overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+
+.note-room-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+
+.note-room-page__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.54);
+}
+
+.note-room-overlay {
+  width: min(1180px, 100%);
+  max-height: calc(100vh - 48px);
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 18px;
+  padding: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 24px;
+  background: rgba(7, 15, 27, 0.9);
+  box-shadow: var(--shadow);
+}
+
+.note-room-overlay__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 4px 0;
+}
+
+.note-room-overlay__header h1,
+.note-room-overlay__header p {
+  margin: 0;
+}
+
+.note-room-overlay__header h1 {
+  margin-top: 10px;
+  font-size: clamp(1.7rem, 3vw, 3rem);
+  line-height: 1;
+}
+
+.note-room-overlay__header p {
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+.note-room-overlay__body {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  gap: 18px;
+  overflow: auto;
+  padding: 2px;
+}
+
+.note-room-overlay__main,
+.note-room-overlay__summary {
+  min-width: 0;
+}
+
+.note-room-overlay__editor {
+  min-height: min(620px, calc(100vh - 210px));
+  border-radius: 22px;
+}
+
+.note-room-overlay__editor .yjs-editor {
+  min-height: clamp(220px, calc(100vh - 470px), 360px);
+}
+
 .muted {
   color: var(--muted);
 }
@@ -572,7 +697,8 @@ button {
 @media (max-width: 1180px) {
   .shell__content,
   .dashboard-grid,
-  .workspace__grid {
+  .workspace__grid,
+  .note-room-overlay__body {
     grid-template-columns: 1fr;
   }
 
@@ -599,11 +725,42 @@ button {
     flex-direction: column;
   }
 
+  .note-room-page {
+    padding: 12px;
+  }
+
+  .note-room-overlay {
+    max-height: calc(100vh - 24px);
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .note-room-overlay__header {
+    flex-direction: column;
+  }
+
+  .note-room-overlay__header .toolbar-button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .note-room-overlay__editor {
+    min-height: auto;
+  }
+
   .workspace {
     padding: 18px;
   }
 
   .workspace__stats {
     grid-template-columns: 1fr;
+  }
+
+  .note-card--with-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .note-delete {
+    justify-items: start;
   }
 }

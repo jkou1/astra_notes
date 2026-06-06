@@ -1,7 +1,6 @@
-import Link from 'next/link';
-
 import { prisma } from '@/lib/prisma';
 import { NoteCreateForm } from '@/components/note-create-form';
+import { NoteRoomLauncher } from '@/components/note-room-launcher';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,22 +11,50 @@ const navigationItems = [
   { label: 'Templates', count: '3' },
 ];
 
-export default async function HomePage() {
+type HomePageProps = {
+  searchParams?: {
+    note?: string;
+  };
+};
+
+export default async function HomePage({ searchParams }: HomePageProps) {
   const recentNotes = await prisma.note.findMany({
+    where: {
+      status: 'ACTIVE',
+    },
     orderBy: { updatedAt: 'desc' },
     take: 12,
     select: {
       id: true,
       title: true,
       category: true,
+      tags: true,
+      encryptionEnabled: true,
+      createdAt: true,
       updatedAt: true,
       blob: {
         select: {
+          crdtBlob: true,
           contentPlain: true,
+          wordCount: true,
+          lineCount: true,
         },
       },
     },
   });
+  const noteRoomItems = recentNotes.map((note) => ({
+    id: note.id,
+    title: note.title,
+    category: note.category,
+    tags: note.tags,
+    encryptionEnabled: note.encryptionEnabled,
+    createdAtLabel: note.createdAt.toLocaleDateString(),
+    updatedAtLabel: note.updatedAt.toLocaleDateString(),
+    contentPlain: note.blob?.contentPlain ?? '',
+    crdtBase64: note.blob?.crdtBlob ? Buffer.from(note.blob.crdtBlob).toString('base64') : null,
+    wordCount: note.blob?.wordCount ?? 0,
+    lineCount: note.blob?.lineCount ?? 0,
+  }));
 
   return (
     <main className="shell">
@@ -85,8 +112,8 @@ export default async function HomePage() {
                 <span className="pill">Collaborative note-taking shell</span>
                 <h2>One focused space for writing, organizing, and syncing notes.</h2>
                 <p>
-                  This first pass gives you the landing workspace, note overview, and editor chrome the
-                  team can build on once the real CRDT editor is wired in.
+                  Create note records, open Yjs-backed editor rooms, and keep CRDT state alongside
+                  readable note metadata in Supabase.
                 </p>
               </div>
 
@@ -126,28 +153,7 @@ export default async function HomePage() {
               <aside className="summary-card" aria-label="Note list and activity">
                 <div>
                   <p className="muted">Recent notes</p>
-                  <ul className="note-list note-list--scrollable">
-                    {recentNotes.length === 0 ? (
-                      <li className="note-card">
-                        <strong>No notes yet</strong>
-                        <span className="muted">Create the first note to seed the Supabase workspace.</span>
-                      </li>
-                    ) : (
-                      recentNotes.map((note) => (
-                        <li key={note.id}>
-                          <Link className="note-card note-card--link" href={`/notes/${note.id}`} aria-label={`Edit ${note.title}`}>
-                            <strong>{note.title}</strong>
-                            <span className="muted">{note.category ?? 'Uncategorized'}</span>
-                            <span className="muted">{note.blob?.contentPlain ?? 'No content preview yet'}</span>
-                            <span className="note-card__meta">
-                              <span className="badge">{note.updatedAt.toLocaleDateString()}</span>
-                              <span className="badge badge--action">Edit</span>
-                            </span>
-                          </Link>
-                        </li>
-                      ))
-                    )}
-                  </ul>
+                  <NoteRoomLauncher initialNoteId={searchParams?.note} notes={noteRoomItems} />
                 </div>
 
                 <div>
@@ -182,14 +188,14 @@ export default async function HomePage() {
             </div>
 
             <div className="panel__section">
-              <p className="muted">Next steps</p>
+              <p className="muted">Built now</p>
               <div className="note-card">
-                <strong>Wire the collaborative editor</strong>
-                <span className="muted">Replace the placeholder canvas with the real Yjs-backed editor.</span>
+                <strong>Yjs editor rooms</strong>
+                <span className="muted">Open notes into CRDT-backed editing with persisted state blobs.</span>
               </div>
               <div className="note-card">
-                <strong>Add workspace routes</strong>
-                <span className="muted">Connect the dashboard and dynamic note pages to real data.</span>
+                <strong>Soft deletion</strong>
+                <span className="muted">Remove notes from active views while keeping state for audit and recovery.</span>
               </div>
             </div>
           </aside>

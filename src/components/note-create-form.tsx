@@ -76,7 +76,7 @@ export function NoteCreateForm() {
       }
 
       setFormState(initialState);
-      router.push(`/notes/${payload.item.id}`);
+      router.push(`/?note=${payload.item.id}`);
       router.refresh();
     } catch {
       setError('Network error while creating note.');

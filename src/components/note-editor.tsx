@@ -9,6 +9,7 @@ type NoteEditorProps = {
   title: string;
   initialContent: string;
   initialCrdtBase64: string | null;
+  onSaved?: () => Promise<void> | void;
 };
 
 type SavePayload = {
@@ -51,7 +52,7 @@ function countLines(content: string) {
   return content.length === 0 ? 0 : content.split(/\n/).length;
 }
 
-export function NoteEditor({ noteId, title, initialContent, initialCrdtBase64 }: NoteEditorProps) {
+export function NoteEditor({ noteId, title, initialContent, initialCrdtBase64, onSaved }: NoteEditorProps) {
   const router = useRouter();
   const ydoc = useMemo(() => new Y.Doc(), []);
   const ytext = useMemo(() => ydoc.getText('content'), [ydoc]);
@@ -119,7 +120,11 @@ export function NoteEditor({ noteId, title, initialContent, initialCrdtBase64 }:
 
       setSavedAt(payload.item?.lastSyncedAt ?? new Date().toISOString());
       setSaveState('saved');
-      router.push('/');
+      if (onSaved) {
+        await onSaved();
+      } else {
+        router.push('/');
+      }
       router.refresh();
     } catch {
       setSaveState('error');
@@ -157,12 +162,17 @@ export function NoteEditor({ noteId, title, initialContent, initialCrdtBase64 }:
             : 'Yjs ready';
 
   return (
-    <article className="editor-card">
+    <article className="editor-card note-room-overlay__editor">
       <div className="editor-card__toolbar" aria-label="Editor actions">
         <span className={`pill ${saveState === 'dirty' || saveState === 'error' ? '' : 'pill--accent'}`}>
           {statusLabel}
         </span>
-        <button className="toolbar-button toolbar-button--primary" type="button" onClick={handleSave} disabled={saveState === 'saving'}>
+        <button
+          className="toolbar-button toolbar-button--primary"
+          type="button"
+          onClick={handleSave}
+          disabled={saveState === 'saving'}
+        >
           {saveState === 'saving' ? 'Saving...' : 'Save note'}
         </button>
       </div>
