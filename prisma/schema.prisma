@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum NoteStatus {
+  ACTIVE
+  ARCHIVED
+  DELETED
+}
+
+enum ShareRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum ActivityAction {
+  CREATED
+  UPDATED
+  DELETED
+  SHARED
+  RESTORED
+}
+
+model User {
+  id         String         @id @default(uuid())
+  email      String         @unique
+  name       String?
+  avatarUrl  String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  notes      Note[]
+  shares     Share[]
+  activities ActivityLog[]
+}
+
+model Note {
+  id                String      @id @default(uuid())
+  title             String
+  ownerId           String?
+  status            NoteStatus  @default(ACTIVE)
+  category          String?
+  tags              String[]    @default([])
+  encryptionEnabled Boolean     @default(false)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  owner             User?       @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  blob              NoteBlob?
+  shares            Share[]
+  activities        ActivityLog[]
+
+  @@index([ownerId])
+  @@index([status])
+  @@index([category])
+}
+
+model NoteBlob {
+  id             String   @id @default(uuid())
+  noteId         String   @unique
+  crdtBlob       Bytes?
+  contentPlain   String?
+  wordCount      Int      @default(0)
+  lineCount      Int      @default(0)
+  characterCount Int      @default(0)
+  lastSyncedAt   DateTime?
+
+  note           Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+}
+
+model Share {
+  id        String    @id @default(uuid())
+  noteId    String
+  userId    String?
+  email     String?
+  role      ShareRole @default(VIEWER)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  note      Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([noteId])
+  @@index([userId])
+  @@index([email])
+}
+
+model ActivityLog {
+  id        String         @id @default(uuid())
+  noteId    String
+  userId    String?
+  action    ActivityAction
+  metadata  Json?
+  createdAt DateTime       @default(now())
+
+  note      Note           @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  user      User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([noteId])
+  @@index([userId])
+  @@index([action])
+}
