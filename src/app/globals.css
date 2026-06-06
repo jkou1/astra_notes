@@ -504,6 +504,61 @@ button {
   gap: 8px;
 }
 
+.note-list--scrollable {
+  max-height: 420px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+}
+
+.note-list--scrollable::-webkit-scrollbar {
+  width: 8px;
+}
+
+.note-list--scrollable::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.45);
+  border-radius: 999px;
+}
+
+.note-list--scrollable::-webkit-scrollbar-thumb {
+  background: rgba(103, 232, 249, 0.28);
+  border-radius: 999px;
+}
+
+.note-card--link {
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.note-card--link:hover,
+.note-card--link:focus-visible {
+  border-color: rgba(103, 232, 249, 0.42);
+  background: rgba(14, 35, 52, 0.72);
+  transform: translateY(-1px);
+}
+
+.note-card--link:focus-visible {
+  outline: 3px solid rgba(56, 189, 248, 0.2);
+  outline-offset: 3px;
+}
+
+.note-card--link .muted {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.note-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.badge--action {
+  color: var(--text);
+  background: rgba(52, 211, 153, 0.12);
+}
+
 .activity-item {
   display: flex;
   justify-content: space-between;

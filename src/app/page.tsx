@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import { prisma } from '@/lib/prisma';
 import { NoteCreateForm } from '@/components/note-create-form';
 
@@ -13,7 +15,7 @@ const navigationItems = [
 export default async function HomePage() {
   const recentNotes = await prisma.note.findMany({
     orderBy: { updatedAt: 'desc' },
-    take: 3,
+    take: 12,
     select: {
       id: true,
       title: true,
@@ -124,7 +126,7 @@ export default async function HomePage() {
               <aside className="summary-card" aria-label="Note list and activity">
                 <div>
                   <p className="muted">Recent notes</p>
-                  <ul className="note-list">
+                  <ul className="note-list note-list--scrollable">
                     {recentNotes.length === 0 ? (
                       <li className="note-card">
                         <strong>No notes yet</strong>
@@ -132,11 +134,16 @@ export default async function HomePage() {
                       </li>
                     ) : (
                       recentNotes.map((note) => (
-                        <li key={note.id} className="note-card">
-                          <strong>{note.title}</strong>
-                          <span className="muted">{note.category ?? 'Uncategorized'}</span>
-                          <span className="muted">{note.blob?.contentPlain ?? 'No content preview yet'}</span>
-                          <span className="badge">{note.updatedAt.toLocaleDateString()}</span>
+                        <li key={note.id}>
+                          <Link className="note-card note-card--link" href={`/notes/${note.id}`} aria-label={`Edit ${note.title}`}>
+                            <strong>{note.title}</strong>
+                            <span className="muted">{note.category ?? 'Uncategorized'}</span>
+                            <span className="muted">{note.blob?.contentPlain ?? 'No content preview yet'}</span>
+                            <span className="note-card__meta">
+                              <span className="badge">{note.updatedAt.toLocaleDateString()}</span>
+                              <span className="badge badge--action">Edit</span>
+                            </span>
+                          </Link>
                         </li>
                       ))
                     )}
