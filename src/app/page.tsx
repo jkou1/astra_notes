@@ -18,30 +18,37 @@ type HomePageProps = {
 };
 
 export default async function HomePage({ searchParams }: HomePageProps) {
-  const recentNotes = await prisma.note.findMany({
-    where: {
-      status: 'ACTIVE',
-    },
-    orderBy: { updatedAt: 'desc' },
-    take: 12,
-    select: {
-      id: true,
-      title: true,
-      category: true,
-      tags: true,
-      encryptionEnabled: true,
-      createdAt: true,
-      updatedAt: true,
-      blob: {
-        select: {
-          crdtBlob: true,
-          contentPlain: true,
-          wordCount: true,
-          lineCount: true,
+  const [activeNoteCount, recentNotes] = await Promise.all([
+    prisma.note.count({
+      where: {
+        status: 'ACTIVE',
+      },
+    }),
+    prisma.note.findMany({
+      where: {
+        status: 'ACTIVE',
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 12,
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        tags: true,
+        encryptionEnabled: true,
+        createdAt: true,
+        updatedAt: true,
+        blob: {
+          select: {
+            crdtBlob: true,
+            contentPlain: true,
+            wordCount: true,
+            lineCount: true,
+          },
         },
       },
-    },
-  });
+    }),
+  ]);
   const noteRoomItems = recentNotes.map((note) => ({
     id: note.id,
     title: note.title,
@@ -119,7 +126,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
               <div className="workspace__stats" aria-label="Workspace summary">
                 <div className="stat-card">
-                  <strong>{recentNotes.length}</strong>
+                  <strong>{activeNoteCount}</strong>
                   <span>Notes in view</span>
                 </div>
                 <div className="stat-card">
@@ -150,53 +157,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 </div>
               </article>
 
-              <aside className="summary-card" aria-label="Note list and activity">
-                <div>
-                  <p className="muted">Recent notes</p>
-                  <NoteRoomLauncher initialNoteId={searchParams?.note} notes={noteRoomItems} />
-                </div>
-
-                <div>
-                  <p className="muted">Activity</p>
-                  <div className="activity-item">
-                    <div>
-                      <strong>Presence preview</strong>
-                      <div className="muted">2 collaborators are queued for the editor room.</div>
-                    </div>
-                    <span className="badge">Live</span>
-                  </div>
-                </div>
-              </aside>
             </div>
           </section>
 
-          <aside className="panel" aria-label="Secondary workspace overview">
+          <aside className="panel shell__history" aria-label="Recent note history">
             <div className="panel__section">
-              <p className="muted">This week</p>
-              <div className="summary-card__item">
-                <span className="muted">Open rooms</span>
-                <strong>3</strong>
-              </div>
-              <div className="summary-card__item">
-                <span className="muted">Drafts</span>
-                <strong>7</strong>
-              </div>
-              <div className="summary-card__item">
-                <span className="muted">Shared links</span>
-                <strong>15</strong>
-              </div>
-            </div>
-
-            <div className="panel__section">
-              <p className="muted">Built now</p>
-              <div className="note-card">
-                <strong>Yjs editor rooms</strong>
-                <span className="muted">Open notes into CRDT-backed editing with persisted state blobs.</span>
-              </div>
-              <div className="note-card">
-                <strong>Soft deletion</strong>
-                <span className="muted">Remove notes from active views while keeping state for audit and recovery.</span>
-              </div>
+              <p className="muted">Recent notes</p>
+              <NoteRoomLauncher initialNoteId={searchParams?.note} notes={noteRoomItems} />
             </div>
           </aside>
         </section>

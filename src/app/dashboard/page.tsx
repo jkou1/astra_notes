@@ -35,25 +35,6 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          <aside className="panel">
-            <div className="panel__section">
-              <p className="muted">Workspace actions</p>
-              <div className="status-card">
-                <div className="status-card__item">
-                  <span className="muted">Create note</span>
-                  <strong>Quick action</strong>
-                </div>
-                <div className="status-card__item">
-                  <span className="muted">Invite</span>
-                  <strong>Share room</strong>
-                </div>
-                <div className="status-card__item">
-                  <span className="muted">Cleanup</span>
-                  <strong>Archive old drafts</strong>
-                </div>
-              </div>
-            </div>
-          </aside>
         </section>
       </div>
     </main>
