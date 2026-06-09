@@ -127,16 +127,32 @@ export async function PATCH(req: Request, { params }: NoteRouteProps) {
   }
 }
 
-export async function DELETE(_req: Request, { params }: NoteRouteProps) {
+export async function DELETE(req: Request, { params }: NoteRouteProps) {
   const requestId = crypto.randomUUID();
 
   try {
+    const isPermanent = new URL(req.url).searchParams.get('permanent') === 'true';
     const note = await prisma.note.findUnique({
       where: { id: params.id },
       select: { id: true, status: true },
     });
 
-    if (!note || note.status === 'DELETED') {
+    if (!note) {
+      return makeError(404, 'Note not found', requestId);
+    }
+
+    if (isPermanent) {
+      const deletedNote = await prisma.note.delete({
+        where: { id: params.id },
+        select: {
+          id: true,
+        },
+      });
+
+      return NextResponse.json({ item: deletedNote, request_id: requestId });
+    }
+
+    if (note.status === 'DELETED') {
       return makeError(404, 'Note not found', requestId);
     }
 

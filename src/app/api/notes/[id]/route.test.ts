@@ -5,6 +5,7 @@ const prismaMock = vi.hoisted(() => ({
   $transaction: vi.fn(),
   note: {
     findUnique: vi.fn(),
+    delete: vi.fn(),
     update: vi.fn(),
   },
   noteBlob: {
@@ -23,6 +24,7 @@ describe('PATCH /api/notes/[id]', () => {
   beforeEach(() => {
     prismaMock.$transaction.mockReset();
     prismaMock.note.findUnique.mockReset();
+    prismaMock.note.delete.mockReset();
     prismaMock.note.update.mockReset();
     prismaMock.noteBlob.upsert.mockReset();
     prismaMock.activityLog.create.mockReset();
@@ -133,6 +135,7 @@ describe('DELETE /api/notes/[id]', () => {
   beforeEach(() => {
     prismaMock.$transaction.mockReset();
     prismaMock.note.findUnique.mockReset();
+    prismaMock.note.delete.mockReset();
     prismaMock.note.update.mockReset();
     prismaMock.noteBlob.upsert.mockReset();
     prismaMock.activityLog.create.mockReset();
@@ -183,6 +186,7 @@ describe('DELETE /api/notes/[id]', () => {
         updatedAt: true,
       },
     });
+    expect(prismaMock.note.delete).not.toHaveBeenCalled();
     expect(prismaMock.activityLog.create).toHaveBeenCalledWith({
       data: {
         noteId: 'note-1',
@@ -192,6 +196,34 @@ describe('DELETE /api/notes/[id]', () => {
         },
       },
     });
+  });
+
+  it('permanently deletes a note when requested', async () => {
+    prismaMock.note.findUnique.mockResolvedValue({ id: 'note-1', status: 'ACTIVE' });
+    prismaMock.note.delete.mockResolvedValue({ id: 'note-1' });
+
+    const response = await DELETE(
+      new Request('http://localhost/api/notes/note-1?permanent=true', { method: 'DELETE' }),
+      {
+        params: { id: 'note-1' },
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      item: {
+        id: 'note-1',
+      },
+      request_id: 'test-request-id',
+    });
+    expect(prismaMock.note.delete).toHaveBeenCalledWith({
+      where: { id: 'note-1' },
+      select: {
+        id: true,
+      },
+    });
+    expect(prismaMock.note.update).not.toHaveBeenCalled();
+    expect(prismaMock.activityLog.create).not.toHaveBeenCalled();
   });
 
   it('returns 404 when the note is already deleted', async () => {
@@ -208,6 +240,7 @@ describe('DELETE /api/notes/[id]', () => {
       request_id: 'test-request-id',
     });
     expect(prismaMock.note.update).not.toHaveBeenCalled();
+    expect(prismaMock.note.delete).not.toHaveBeenCalled();
     expect(prismaMock.activityLog.create).not.toHaveBeenCalled();
   });
 });
