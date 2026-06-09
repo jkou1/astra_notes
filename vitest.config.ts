@@ -14,6 +14,6 @@ export default defineConfig({
     restoreMocks: true,
     clearMocks: true,
     mockReset: true,
-    include: ['src/**/*.{test,spec}.ts'],
+    include: ['src/**/*.{test,spec}.ts', 'tests/**/*.{test,spec}.ts'],
   },
 });
