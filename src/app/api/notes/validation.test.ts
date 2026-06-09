@@ -6,6 +6,7 @@ describe('validateCreateNoteBody', () => {
     const result = validateCreateNoteBody({
       title: 'Draft one',
       content: 'Hello world',
+      crdt_blob: Buffer.from('encoded-yjs-state').toString('base64'),
       category: 'general',
       tags: ['alpha', 'beta'],
       encryption_enabled: false,
@@ -16,6 +17,7 @@ describe('validateCreateNoteBody', () => {
       expect(result.data).toEqual({
         title: 'Draft one',
         content: 'Hello world',
+        crdt_blob: Buffer.from('encoded-yjs-state').toString('base64'),
         category: 'general',
         tags: ['alpha', 'beta'],
         encryption_enabled: false,

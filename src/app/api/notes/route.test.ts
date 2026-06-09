@@ -16,6 +16,8 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 describe('POST /api/notes', () => {
+  const encodedCrdtBlob = Buffer.from('encoded-yjs-state').toString('base64');
+
   beforeEach(() => {
     prismaMock.$transaction.mockReset();
     prismaMock.note.create.mockReset();
@@ -48,6 +50,7 @@ describe('POST /api/notes', () => {
         body: JSON.stringify({
           title: 'Draft one',
           content: 'Hello world',
+          crdt_blob: encodedCrdtBlob,
           category: 'general',
           tags: ['alpha'],
           encryption_enabled: true,
@@ -81,6 +84,7 @@ describe('POST /api/notes', () => {
     expect(prismaMock.noteBlob.create).toHaveBeenCalledWith({
       data: {
         noteId: 'note-1',
+        crdtBlob: Buffer.from(encodedCrdtBlob, 'base64'),
         contentPlain: 'Hello world',
         wordCount: 2,
         lineCount: 1,
@@ -97,6 +101,7 @@ describe('POST /api/notes', () => {
         body: JSON.stringify({
           title: 'Café',
           content: 'Hello world',
+          crdt_blob: encodedCrdtBlob,
         }),
       })
     );

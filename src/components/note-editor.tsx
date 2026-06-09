@@ -60,7 +60,18 @@ export function NoteEditor({ noteId, title, initialContent, initialCrdtBase64, o
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'dirty' | 'saving' | 'saved' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const isApplyingRemoteUpdate = useRef(false);
+  const lastSavedContent = useRef(initialContent);
+
+  function replaceYText(nextContent: string) {
+    ydoc.transact(() => {
+      ytext.delete(0, ytext.length);
+      if (nextContent.length > 0) {
+        ytext.insert(0, nextContent);
+      }
+    });
+  }
 
   useEffect(() => {
     ydoc.transact(() => {
@@ -75,6 +86,7 @@ export function NoteEditor({ noteId, title, initialContent, initialCrdtBase64, o
     });
 
     const currentContent = ytext.toString();
+    lastSavedContent.current = currentContent;
     setContent(currentContent);
 
     function handleTextChange() {
@@ -119,6 +131,7 @@ export function NoteEditor({ noteId, title, initialContent, initialCrdtBase64, o
       }
 
       setSavedAt(payload.item?.lastSyncedAt ?? new Date().toISOString());
+      lastSavedContent.current = content;
       setSaveState('saved');
       if (onSaved) {
         await onSaved();
@@ -135,16 +148,51 @@ export function NoteEditor({ noteId, title, initialContent, initialCrdtBase64, o
   function handleChange(nextContent: string) {
     setContent(nextContent);
     setError(null);
+    setCopyState('idle');
     setSaveState('dirty');
 
     if (isApplyingRemoteUpdate.current) {
       return;
     }
 
-    ydoc.transact(() => {
-      ytext.delete(0, ytext.length);
-      ytext.insert(0, nextContent);
-    });
+    replaceYText(nextContent);
+  }
+
+  function handleClear() {
+    if (content.length === 0 || saveState === 'saving') {
+      return;
+    }
+
+    setContent('');
+    setError(null);
+    setCopyState('idle');
+    setSaveState('dirty');
+    replaceYText('');
+  }
+
+  function handleRestoreSaved() {
+    if (saveState === 'saving') {
+      return;
+    }
+
+    const nextContent = lastSavedContent.current;
+    setContent(nextContent);
+    setError(null);
+    setCopyState('idle');
+    setSaveState('idle');
+    replaceYText(nextContent);
+  }
+
+  async function handleCopyText() {
+    setError(null);
+
+    try {
+      await navigator.clipboard.writeText(ytext.toString());
+      setCopyState('copied');
+    } catch {
+      setCopyState('error');
+      setError('Unable to copy note content from this browser session.');
+    }
   }
 
   const characterCount = content.length;
@@ -174,6 +222,20 @@ export function NoteEditor({ noteId, title, initialContent, initialCrdtBase64, o
           disabled={saveState === 'saving'}
         >
           {saveState === 'saving' ? 'Saving...' : 'Save note'}
+        </button>
+        <button className="toolbar-button" type="button" onClick={handleRestoreSaved} disabled={saveState === 'saving'}>
+          Restore saved
+        </button>
+        <button className="toolbar-button" type="button" onClick={handleCopyText} disabled={content.length === 0}>
+          {copyState === 'copied' ? 'Copied' : 'Copy text'}
+        </button>
+        <button
+          className="toolbar-button toolbar-button--danger"
+          type="button"
+          onClick={handleClear}
+          disabled={saveState === 'saving' || content.length === 0}
+        >
+          Clear draft
         </button>
       </div>
 

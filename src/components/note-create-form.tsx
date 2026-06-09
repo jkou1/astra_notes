@@ -1,7 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import * as Y from 'yjs';
 
 type FormState = {
   title: string;
@@ -32,11 +33,43 @@ const initialState: FormState = {
   encryptionEnabled: false,
 };
 
+function bytesToBase64(bytes: Uint8Array) {
+  let binary = '';
+
+  for (let index = 0; index < bytes.length; index += 1) {
+    binary += String.fromCharCode(bytes[index]);
+  }
+
+  return window.btoa(binary);
+}
+
 export function NoteCreateForm() {
   const router = useRouter();
+  const ydoc = useMemo(() => new Y.Doc(), []);
+  const ytext = useMemo(() => ydoc.getText('content'), [ydoc]);
   const [formState, setFormState] = useState<FormState>(initialState);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      ydoc.destroy();
+    };
+  }, [ydoc]);
+
+  function replaceYText(nextContent: string) {
+    ydoc.transact(() => {
+      ytext.delete(0, ytext.length);
+      if (nextContent.length > 0) {
+        ytext.insert(0, nextContent);
+      }
+    });
+  }
+
+  function handleContentChange(nextContent: string) {
+    setFormState((current) => ({ ...current, content: nextContent }));
+    replaceYText(nextContent);
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -57,6 +90,7 @@ export function NoteCreateForm() {
         body: JSON.stringify({
           title: formState.title,
           content: formState.content,
+          crdt_blob: bytesToBase64(Y.encodeStateAsUpdate(ydoc)),
           category: formState.category || null,
           tags,
           encryption_enabled: formState.encryptionEnabled,
@@ -76,6 +110,7 @@ export function NoteCreateForm() {
       }
 
       setFormState(initialState);
+      replaceYText('');
       router.push(`/?note=${payload.item.id}`);
       router.refresh();
     } catch {
@@ -121,7 +156,7 @@ export function NoteCreateForm() {
             name="content"
             placeholder="Capture the first draft of the note here."
             value={formState.content}
-            onChange={(event) => setFormState((current) => ({ ...current, content: event.target.value }))}
+            onChange={(event) => handleContentChange(event.target.value)}
             rows={8}
             required
           />

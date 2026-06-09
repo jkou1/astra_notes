@@ -145,9 +145,10 @@ button {
 
 .shell__content {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr) minmax(300px, 360px);
+  grid-template-columns: 280px minmax(0, 1fr) minmax(480px, 50vw);
   gap: 18px;
   align-items: stretch;
+  min-height: 0;
 }
 
 .panel,
@@ -164,11 +165,18 @@ button {
   flex-direction: column;
   padding: 20px;
   gap: 20px;
+  min-height: 0;
 }
 
 .panel__section {
   display: grid;
   gap: 12px;
+}
+
+.shell__history .panel__section {
+  grid-template-rows: auto auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
 }
 
 .nav-list,
@@ -527,8 +535,15 @@ button {
   gap: 8px;
 }
 
+.note-history-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 220px);
+  gap: 12px;
+}
+
 .note-list--scrollable {
-  max-height: 420px;
+  max-height: none;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding-right: 6px;
@@ -753,6 +768,10 @@ button {
   }
 
   .workspace__stats {
+    grid-template-columns: 1fr;
+  }
+
+  .note-history-controls {
     grid-template-columns: 1fr;
   }
 

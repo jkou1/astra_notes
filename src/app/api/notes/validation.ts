@@ -1,6 +1,7 @@
 export type CreateNoteBody = {
   title: string;
   content: string;
+  crdt_blob: string;
   category?: string | null;
   tags?: string[];
   encryption_enabled?: boolean;
@@ -16,7 +17,7 @@ export function validateCreateNoteBody(body: unknown): ValidationResult {
   }
 
   const candidate = body as Partial<CreateNoteBody>;
-  const { title, content, category, tags, encryption_enabled } = candidate;
+  const { title, content, crdt_blob, category, tags, encryption_enabled } = candidate;
 
   if (typeof title !== 'string' || title.trim().length === 0) {
     return { ok: false, status: 400, detail: 'Title is required' };
@@ -34,6 +35,14 @@ export function validateCreateNoteBody(body: unknown): ValidationResult {
     return { ok: false, status: 400, detail: 'Non-ASCII characters are not allowed' };
   }
 
+  if (typeof crdt_blob !== 'string' || crdt_blob.length === 0) {
+    return { ok: false, status: 400, detail: 'CRDT blob is required' };
+  }
+
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(crdt_blob)) {
+    return { ok: false, status: 400, detail: 'CRDT blob must be base64 encoded' };
+  }
+
   if (tags !== undefined && !Array.isArray(tags)) {
     return { ok: false, status: 400, detail: 'Tags must be an array of strings' };
   }
@@ -43,6 +52,7 @@ export function validateCreateNoteBody(body: unknown): ValidationResult {
     data: {
       title: title.trim(),
       content,
+      crdt_blob,
       category: category ?? null,
       tags: tags ?? [],
       encryption_enabled,

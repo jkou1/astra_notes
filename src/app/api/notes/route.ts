@@ -17,7 +17,8 @@ export async function POST(req: Request) {
       return makeError(result.status, result.detail, requestId);
     }
 
-    const { title, content, category, tags, encryption_enabled } = result.data;
+    const { title, content, crdt_blob, category, tags, encryption_enabled } = result.data;
+    const crdtBlob = Buffer.from(crdt_blob, 'base64');
 
     const note = await prisma.$transaction(async (transaction) => {
       const createdNote = await transaction.note.create({
@@ -32,6 +33,7 @@ export async function POST(req: Request) {
       await transaction.noteBlob.create({
         data: {
           noteId: createdNote.id,
+          crdtBlob,
           contentPlain: content,
           wordCount: content.split(/\s+/).filter(Boolean).length,
           lineCount: content.split(/\n/).length,
