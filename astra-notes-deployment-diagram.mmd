@@ -1,0 +1,47 @@
+flowchart TB
+  subgraph Client["Client Device"]
+    Browser["Web Browser"]
+    Editor["TipTap / Lexical Editor"]
+    YjsClient["Yjs Document State"]
+  end
+
+  subgraph Vercel["Vercel / Next.js Hosting"]
+    NextApp["Next.js App Router"]
+    ServerComponents["React Server Components"]
+    RouteHandlers["API Route Handlers"]
+    AuthMiddleware["Auth Middleware"]
+  end
+
+  subgraph Supabase["Supabase Platform"]
+    Postgres["PostgreSQL Database"]
+    Realtime["Supabase Realtime"]
+    Storage["Optional File Storage"]
+  end
+
+  subgraph Collaboration["Collaboration Provider"]
+    WebSocketProvider["Yjs WebSocket Provider"]
+    Awareness["Awareness / Presence State"]
+  end
+
+  subgraph External["External Services"]
+    Email["Email Provider"]
+    Analytics["Analytics / Logging"]
+  end
+
+  Browser --> NextApp
+  Browser --> WebSocketProvider
+  Editor --> YjsClient
+  YjsClient --> WebSocketProvider
+
+  NextApp --> ServerComponents
+  NextApp --> RouteHandlers
+  NextApp --> AuthMiddleware
+
+  RouteHandlers --> Postgres
+  RouteHandlers --> Storage
+  WebSocketProvider --> Realtime
+  WebSocketProvider --> Awareness
+  Realtime --> Postgres
+
+  NextApp --> Email
+  NextApp --> Analytics
