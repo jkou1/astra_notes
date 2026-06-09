@@ -1,6 +1,6 @@
 # AstraNotes
 
-AstraNotes is a high-performance collaborative note-taking app built with Next.js App Router, TypeScript, Prisma, PostgreSQL, and Yjs. The project focuses on low-latency collaborative editing, durable note metadata, CRDT-backed document state, and a clean workspace UI for creating and opening note rooms.
+AstraNotes is a high-performance collaborative note-taking app built with Next.js App Router, TypeScript, Prisma, PostgreSQL, and Yjs. The project focuses on low-latency collaborative editing, durable note metadata, CRDT-backed document state, and a clean workspace UI for creating and opening note rooms. You can access it at: https://astra-notes-6nwgq9ixz-johan-kou-s-projects.vercel.app/
 
 ## Project Overview
 
